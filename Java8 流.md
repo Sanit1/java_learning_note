@@ -495,5 +495,5 @@ public class CollectingIntoMaps {
 
 输出:
 
-![collectingintomap](imgs\collectingintomap.png)
+![collectingintomap](imgs/collectingintomap.png)
 
