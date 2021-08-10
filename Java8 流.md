@@ -497,3 +497,135 @@ public class CollectingIntoMaps {
 
 ![collectingintomap](imgs/collectingintomap.png)
 
+#### 下游收集器
+
+groupingBy 和partitioningBy
+
+partitionBy会产生true或者false的键值的映射表，groupingBy会产生应用到所有元素后产生的结果作为键值的映射表
+
+
+
+#### 基本流类型
+
+```java
+package com.company.stream.streademo;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
+public class PrimitiveTypeStreams {
+    public static void show(String title, IntStream intStream) {
+        final int SIZE = 10;
+        int[] firstElements = intStream.limit(SIZE+1).toArray();
+        System.out.println(title);
+        for (int i = 0;i<firstElements.length;i++) {
+            if(i>0) {
+                System.out.print(", ");
+            }
+            if(i<SIZE) {
+                System.out.print(firstElements[i]);
+            }else {
+                System.out.print("...");
+            }
+        }
+        System.out.println();
+    }
+
+    public static void main(String[] args) throws IOException {
+        IntStream is1 = IntStream.generate(()->(int)(Math.random() * 100));
+        show("is1", is1);
+        IntStream is2 = IntStream.range(5, 10);
+        show("is2", is2);
+        IntStream is3 = IntStream.rangeClosed(5, 10);
+        show("is3", is3);
+
+        String contents = new String(Files.readAllBytes(Paths.get("C:\\Users\\Sanit\\Downloads\\a.txt")),
+                StandardCharsets.UTF_8);
+        Stream<String> words = Stream.of(contents.split("\\PL+"));
+        IntStream is4 = words.mapToInt(String::length);
+        show("is4", is4);
+
+        String sentence = "\uD835\uDD46 is the set of octonions";
+        System.out.println(sentence);
+        IntStream codes = sentence.codePoints();
+        System.out.println(codes.mapToObj(c-> String.format("%X", c)).collect(Collectors.joining()));
+
+        Stream<Integer> integerStream = IntStream.range(0,100).boxed();
+        IntStream is5 = integerStream.mapToInt(Integer::intValue);
+        show("is5", is5);
+    }
+}
+```
+
+
+
+#### 并行流
+
+可以用Collection.parallelStream方法从任何一个集合中获取一个并行流。parallel可将任意顺序流转成并行流。
+
+* 并行化会导致大量的开销，只有面对非常大的数据集才划算
+* 只有在底层数据源可以被有效分割为多个部分时，将流并行化才有意义
+* 并行流使用的线程池可能会因诸如文件I/O或网络访问这样的操作被阻塞而饿死。只有面对海量的内存数据和运算密集处理，并行流才会工作最佳。
+
+```java
+package com.company.stream.streademo;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+public class ParallelStreams {
+    public static void main(String[] args) throws IOException {
+        String contents = new String(Files.readAllBytes(Paths.get("C:\\Users\\Sanit\\Downloads\\a.txt")),
+                StandardCharsets.UTF_8);
+        List<String> wordList = Arrays.asList(contents.split("\\PL+"));
+
+        int[] shortWords = new int[10];
+        wordList.parallelStream().forEach(
+                s ->
+                {
+                    if (s.length() < 10) shortWords[s.length()]++;
+                }
+        );
+        System.out.println(Arrays.toString(shortWords));
+
+        Arrays.fill(shortWords, 0);
+        wordList.parallelStream().forEach(
+                s ->
+                {
+                    if (s.length() < 10) shortWords[s.length()]++;
+                }
+        );
+        System.out.println(Arrays.toString(shortWords));
+
+        Map<Integer, Long> shortWordCounts = wordList.parallelStream().filter(s -> s.length()<10).collect(
+                Collectors.groupingBy(String::length, Collectors.counting())
+        );
+        System.out.println(shortWordCounts);
+
+        Map<Integer, List<String>> result = wordList.parallelStream().collect(
+                Collectors.groupingByConcurrent(String::length)
+        );
+        System.out.println(result.get(3));
+
+        result = wordList.parallelStream().collect(Collectors.groupingByConcurrent(String::length));
+        System.out.println(result.get(3));
+
+        Map<Integer,Long> wordCounts = wordList.parallelStream().collect(Collectors.groupingByConcurrent(String::length, Collectors.counting()));
+
+        System.out.println(wordCounts);
+    }
+}
+```
+
+parallelStream并不是线程安全的
