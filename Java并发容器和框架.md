@@ -1,6 +1,6 @@
 #### ConcurrentHashMap
 
-HashMap线程不安全，并行put的时候有可能导致HashMap的Entry链表形成环形数据结构，next永不为空，陷入死循环
+HashMap线程不安全，在jdk 1.7时，HashMap使用头插法插入链表，所以每次发生扩容的时候，进行链表复制时，都会翻转链表，所以并行put的并发生扩容的时候有可能导致HashMap的Entry链表形成环形数据结构，next永不为空，陷入死循环
 
 ```java
 package com.company.concurrentclass.hashmapdeadend;
@@ -34,7 +34,7 @@ public class DeadEndHashMap {
 
 
 
-ConcurrentHashMap使用了分段锁技术，一段数据配一把锁，其它段的数据不受影响。HashMap key value可以为null 但是ConcurrentHashMap不允许，直接会判处异常
+ConcurrentHashMap使用了分段锁技术，一段数据配一把锁，其它段的数据不受影响（jdk1.8改为CAS锁，并引入红黑树）。HashMap key value可以为null 但是ConcurrentHashMap不允许，直接会判处异常
 
 
 
